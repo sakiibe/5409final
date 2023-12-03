@@ -1,0 +1,100 @@
+const https = require("https");
+
+exports.handler = async (event) => {
+  // Retrieve the match_id from the path parameters received from the API Gateway event
+  // console.log(event);
+  // console.log(event.pathParameters);
+  const matchId = event.pathParameters.match_id;
+
+  // OpenDota API to fetch match information
+  const apiUrl = `https://api.opendota.com/api/matches/${matchId}`;
+
+  try {
+    const matchDetails = await getMatchDetails(apiUrl);
+    const processedData = processMatchData(matchDetails, matchId);
+    return {
+      statusCode: 200,
+      headers: {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET,OPTIONS",
+      },
+      body: JSON.stringify(processedData),
+    };
+  } catch (error) {
+    console.error(error);
+    return {
+      statusCode: 500,
+      body: JSON.stringify({
+        error: "An error occurred while fetching match data.",
+      }),
+    };
+  }
+};
+
+// Function to perform the API request
+const getMatchDetails = (url) =>
+  new Promise((resolve, reject) => {
+    https
+      .get(url, (res) => {
+        let data = "";
+
+        res.on("data", (chunk) => {
+          data += chunk;
+        });
+
+        res.on("end", () => {
+          resolve(JSON.parse(data));
+        });
+      })
+      .on("error", (e) => {
+        reject(e);
+      });
+  });
+
+// Function to process the raw match data and extract the required information
+const processMatchData = (matchDetails, matchId) => {
+  const result = {
+    match_id: matchId,
+    matchOutcome: matchDetails.radiant_win ? "Radiant Victory" : "Dire Victory",
+    teams: {
+      radiant: [],
+      dire: [],
+    },
+  };
+
+  // 0-4 are Radiant, and 5-9 are Dire
+  matchDetails.players.forEach((player, index) => {
+    const team = index < 5 ? "radiant" : "dire";
+    const playerData = {
+      heroName: player.hero_id,
+      playerName: player.personaname,
+      stats: {
+        K: player.kills,
+        D: player.deaths,
+        A: player.assists,
+        NET: player.total_gold,
+        LH_DN: `${player.last_hits}/${player.denies}`,
+        GPM: player.gold_per_min,
+        XPM: player.xp_per_min,
+        DMG: player.hero_damage,
+        HEAL: player.hero_healing,
+      },
+    };
+    result.teams[team].push(playerData);
+  });
+
+  return {
+    result,
+  };
+};
+
+// return {
+//   statusCode: 200,
+//   headers: {
+//             "Content-Type":"application/json",
+//             "Access-Control-Allow-Origin" :"*",
+//             "Access-Control-Allow-Methods" :"GET,OPTIONS"
+//         },
+//   body: JSON.stringify(result),
+// };

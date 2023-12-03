@@ -1,0 +1,32 @@
+.saved-matches {
+    background-color: #1f2937; 
+    color: white;
+    min-height: 100vh;
+    padding: 1rem;
+  }
+  
+  .title {
+    text-align: center;
+    margin: 1rem 0;
+    color: red;
+  }
+  
+  .matches-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .match-card {
+    background-color: #374151; 
+    margin: 0.5rem;
+    padding: 1rem;
+    border-radius: 8px; 
+    cursor: pointer; 
+    transition: transform 0.2s; 
+  }
+  
+  .match-card:hover {
+    transform: scale(1.05); 
+  }
+  
